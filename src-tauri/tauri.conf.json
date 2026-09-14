@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "SNS",
+  "version": "0.1.0",
+  "identifier": "ao.ntcao.sns",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Medical",
+    "shortDescription": "SNS — Sistema Nacional de Saúde",
+    "longDescription": "Aplicação desktop do SNS — Sistema Nacional de Saúde. Abre a aplicação web numa janela nativa, sem barra de endereço.",
+    "publisher": "NTC Angola",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

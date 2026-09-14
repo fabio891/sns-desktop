@@ -1,0 +1,97 @@
+name: Desktop SNS
+
+# Compila os instaladores da casca desktop. Corre em tags v* e por execução
+# manual (Actions → Desktop SNS → Run workflow). Os instaladores ficam como
+# artefactos do workflow.
+#
+# O endereço do servidor vem da variável de repositório SNS_APP_URL
+# (Settings → Secrets and variables → Actions → Variables). Se não estiver
+# definida, usa-se o valor por omissão de scripts/config.mjs.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compilar:
+    name: Compilar (${{ matrix.slug }})
+    runs-on: ${{ matrix.plataforma }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - slug: macos-arm64
+            plataforma: macos-latest
+            args: '--target aarch64-apple-darwin --bundles dmg'
+          - slug: macos-x64
+            plataforma: macos-latest
+            args: '--target x86_64-apple-darwin --bundles dmg'
+          - slug: linux
+            plataforma: ubuntu-22.04
+            args: '--bundles deb,appimage'
+          - slug: windows
+            plataforma: windows-latest
+            args: '--bundles nsis,msi'
+
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@v4
+
+      - name: Dependências de sistema (Linux)
+        if: matrix.plataforma == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ contains(matrix.args, 'apple-darwin') && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Cache de compilação Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Dependências npm
+        run: npm ci
+
+      - name: Gerar o endereço do servidor
+        env:
+          SNS_APP_URL: ${{ vars.SNS_APP_URL }}
+        run: node scripts/config.mjs
+
+      - name: Compilar a aplicação
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: ${{ matrix.args }}
+
+      - name: Publicar instaladores
+        uses: actions/upload-artifact@v4
+        with:
+          name: sns-desktop-${{ matrix.slug }}
+          path: src-tauri/target/**/release/bundle/**
+          if-no-files-found: error

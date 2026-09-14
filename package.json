@@ -1,0 +1,17 @@
+{
+  "name": "sns-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Casca desktop do SNS — Sistema Nacional de Saúde (Tauri v2)",
+  "scripts": {
+    "config": "node scripts/config.mjs",
+    "tauri": "tauri",
+    "tauri:dev": "npm run config && tauri dev",
+    "tauri:build": "npm run config && tauri build",
+    "tauri:info": "tauri info"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

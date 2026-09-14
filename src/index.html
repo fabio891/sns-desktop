@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SNS — Sistema Nacional de Saúde</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="main.js"></script>
+  </head>
+
+  <body>
+    <main class="ecra">
+      <!-- Estado 1: a tentar ligar ao servidor -->
+      <section id="estado-ligacao" class="estado">
+        <div class="marca" aria-hidden="true">
+          <span class="cruz"></span>
+        </div>
+        <h1 class="marca-nome"><span class="saude">SNS</span></h1>
+        <p class="marca-sub">Sistema Nacional de Saúde</p>
+        <div class="spinner" role="status" aria-live="polite">
+          <span class="visually-hidden">A ligar ao servidor…</span>
+        </div>
+        <p class="dica">A ligar ao servidor…</p>
+      </section>
+
+      <!-- Estado 2: sem ligação ao servidor -->
+      <section id="estado-offline" class="estado" hidden>
+        <div class="marca marca-alerta" aria-hidden="true">
+          <span class="cruz"></span>
+        </div>
+        <h1 class="titulo-erro">Sem conexão com a internet</h1>
+        <p class="texto-erro">Verifique sua rede e tente novamente.</p>
+        <button id="btn-reconectar" type="button" class="botao">Tentar Reconectar</button>
+        <p class="detalhe">
+          Servidor: <span id="servidor" class="mono"></span>
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

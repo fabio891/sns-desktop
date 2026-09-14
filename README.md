@@ -1,0 +1,67 @@
+# SNS — Aplicação Desktop
+
+Casca desktop (Tauri v2) da aplicação web do **SNS — Sistema Nacional de Saúde**. O binário é um invólucro fino: a interface continua a ser a aplicação web servida pelo servidor, aberta numa janela nativa sem qualquer UI de navegador.
+
+## O que a casca faz
+
+- Abre a janela em **1280x800**, redimensionável e centrada, com a barra de título do sistema operativo.
+- No arranque testa `GET {SERVIDOR}/up` (timeout de 5s). Se responder, navega para a aplicação; se não, mostra o ecrã de fallback com o botão **Tentar Reconectar**.
+- Envia **links externos** para o navegador predefinido do sistema, nunca abrindo dentro da janela.
+- Em builds de produção bloqueia atalhos de navegador (`F5`, `Ctrl/Cmd+R`, `F12`, `Ctrl+Shift+I/J/C`, `Ctrl+U`). Em desenvolvimento ficam disponíveis. `Ctrl+P` (impressão) e `Ctrl+F` continuam a funcionar de propósito.
+
+## Requisitos
+
+- Node 22+ e npm
+- Rust (via [rustup](https://rustup.rs))
+- Linux: `libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `librsvg2-dev`, `build-essential`
+
+## Comandos
+
+```bash
+npm install          # dependências
+npm run tauri:dev    # desenvolvimento (gera src/config.js e abre a app)
+npm run tauri:build  # instalador para o SO onde corres o comando
+npm run tauri:info   # diagnóstico do ambiente
+```
+
+O `.exe` só se gera em Windows, o `.dmg` só em macOS e o `.deb`/`.AppImage` só em Linux. Para os três, usa o CI (ver abaixo).
+
+## Endereço do servidor
+
+O valor por omissão está em `scripts/config.mjs` e é escrito em `src/config.js` a cada build. Para apontar a outro servidor, sem editar código:
+
+```bash
+SNS_APP_URL=https://outro.dominio.ao npm run tauri:build
+```
+
+> **Atenção:** a lista de hosts internos está também em `src-tauri/src/lib.rs` (`HOSTS_INTERNOS`). Um domínio novo tem de ser acrescentado lá, senão os links para esse domínio são tratados como externos e abrem no navegador do sistema.
+
+No CI, define a variável `SNS_APP_URL` nas *Settings → Variables* do repositório (não é segredo).
+
+## Instaladores (CI)
+
+`.github/workflows/desktop-release.yml` compila em paralelo:
+
+| Sistema | Artefactos |
+|---|---|
+| Windows | `.exe` (NSIS) e `.msi` |
+| macOS | `.dmg` (Apple Silicon e Intel) |
+| Linux | `.deb` e `.AppImage` |
+
+Corre em tags `v*` e por execução manual (Actions → *Desktop SNS* → *Run workflow*). Os instaladores ficam como artefactos do workflow.
+
+**Os instaladores não estão assinados.** Sem certificado de código, o Windows mostra o aviso do SmartScreen e o macOS exige abrir com Ctrl+clique. Assinar exige certificados pagos (Authenticode / Apple Developer ID) e é trabalho à parte.
+
+## Estrutura
+
+```
+src/                      casca local (HTML/CSS/JS) — só o ecrã de ligação/offline
+  config.js               gerado por scripts/config.mjs
+src-tauri/
+  tauri.conf.json         metadados do bundle (nome, ícones); a janela é criada em Rust
+  src/lib.rs              janela, links externos, bloqueio de atalhos
+  capabilities/           permissões (mínimas: só core)
+scripts/config.mjs        gera src/config.js a partir de SNS_APP_URL
+```
+
+Os ícones em `src-tauri/icons/` são ainda os do template do Tauri — a substituir pelos oficiais do SNS (`npm run tauri icon caminho/para/logo.png`).
