@@ -42,8 +42,10 @@ Single Source of Truth. Cada fatia é vertical e verificada no terminal antes de
 - [x] S6.2 Primeira tentativa falhou **sem correr**: `The job was not started because your account is locked due to a billing issue.` — conta GitHub bloqueada por facturação (resolvido pelo Fábio)
 - [x] S6.3 Versão alinhada em 0.1.1 (`package.json`, `tauri.conf.json`, `Cargo.toml`) + tag `v0.1.1` → **run 34851970602, os 4 alvos com sucesso**
       *linux=success (479s) · macos-x64=success (331s) · macos-arm64=success (381s) · windows=success (468s). Os 14/14 passos correram no Linux (nos outros, o passo de `apt` é ignorado por não ser Linux).*
-- [x] S6.4 Artefactos publicados (API): `sns-desktop-windows` 3.0 MB · `sns-desktop-linux` 177.6 MB · `sns-desktop-macos-arm64` 1.8 MB · `sns-desktop-macos-x64` 2.0 MB. Expiram a 2026-12-13.
-      *O passo de upload está configurado com `if-no-files-found: error` e passou, logo há bundles em cada plataforma. Os nomes exactos dos ficheiros não foram lidos: os logs e os artefactos exigem autenticação (HTTP 403 anónimo).*
-- [ ] S6.5 Alguém instalar e abrir a aplicação para confirmar o comportamento (janela, fallback offline, links externos, atalhos)
+- [x] S6.4 Artefactos publicados: `sns-desktop-windows` · `sns-desktop-linux` · `sns-desktop-macos-arm64` · `sns-desktop-macos-x64`
+- [x] S6.5 Release automático — primeiro job `publicar` falhou (*não fazia checkout, logo o `gh` não inferia o repositório*); corrigido com `--repo` explícito + erros emitidos como anotações
+      *Tag `v0.1.3`, run 34854848177: os 5 jobs com sucesso. Release **publicado** com 6 instaladores: `SNS_0.1.3_x64-setup.exe` (1.3 MB) · `SNS_0.1.3_x64_en-US.msi` (1.9 MB) · `SNS_0.1.3_aarch64.dmg` (1.8 MB) · `SNS_0.1.3_x64.dmg` (1.9 MB) · `SNS_0.1.3_amd64.deb` (2.2 MB) · `SNS_0.1.3_amd64.AppImage` (76.3 MB)*
+      *Download **anónimo** confirmado: página do release HTTP 200 e os ficheiros HTTP 200 `application/octet-stream`, sem sessão GitHub — que era o requisito para partilhar com terceiros.*
+- [ ] S6.6 Alguém instalar e abrir a aplicação para confirmar o comportamento (janela, fallback offline, links externos, atalhos)
 
-**Resultado**: o Rust **compila** nos 4 alvos e os instaladores são gerados. Continua por confirmar o comportamento em execução — compilar não é o mesmo que funcionar.
+**Resultado**: o Rust **compila** nos 4 alvos, os instaladores são gerados e estão publicados em <https://github.com/fabio891/sns-desktop/releases/tag/v0.1.3>. Continua por confirmar o comportamento em execução — **compilar não é o mesmo que funcionar**.

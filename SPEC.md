@@ -71,7 +71,8 @@ Aplicação desktop leve que envolve a aplicação web do SNS numa janela nativa
 - [x] `src/config.js` gerado com `SNS_APP_URL` quando a variável existe, e com o valor por omissão quando não existe.
 - [x] `src-tauri/src/lib.rs` cria a janela com título, 1280x800, redimensionável, centrada, `on_navigation` e `initialization_script`.
 - [x] Página local: mostra o ecrã de fallback com a mensagem pedida e o botão **Tentar Reconectar**; os selectores usados pelo JS existem todos no HTML *(presença verificada estaticamente — o comportamento de redireccionar/falhar não foi executado).*
-- [x] Workflow `.github/workflows/desktop-release.yml` com matrix macOS (2 alvos), Ubuntu e Windows.
+- [x] Workflow `.github/workflows/desktop-release.yml` com matrix macOS (2 alvos), Ubuntu e Windows, e job `publicar` que cria um release na tag com os instaladores.
+      *Verificado: release `v0.1.3` publicado com 6 ficheiros e download anónimo a funcionar (HTTP 200 sem sessão).*
 - [x] `git init` + commit inicial + deploy key dedicada (`~/.ssh/deploy_sns_desktop`) com alias `github-sns-desktop`.
 - [x] **Verificação honesta**: nada disto é compilado neste servidor. A validação local é estrutural (JSON, npm, scripts Node); a validação de compilação e de comportamento é o CI, depois do Fábio criar o repo e adicionar a deploy key.
 
