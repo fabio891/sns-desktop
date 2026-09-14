@@ -29,4 +29,12 @@ Single Source of Truth. Cada fatia é vertical e verificada no terminal antes de
       *Verificado: YAML parseado, 2 eventos, 4 alvos, 9 passos.*
 - [x] S4.2 `git init` (`main`) + 36 ficheiros preparados (node_modules e target ignorados)
 - [x] S4.3 Deploy key dedicada `~/.ssh/deploy_sns_desktop` + alias `github-sns-desktop` (`ssh -G` confirma hostname/identityfile)
-- [ ] S4.4 Push para `github.com:fabio891/sns-desktop` *(bloqueado: depende de o Fábio criar o repo e adicionar a chave pública)*
+- [x] S4.4 Push para `github.com:fabio891/sns-desktop`
+      *Verificado: `ssh -T git@github-sns-desktop` → «Hi fabio891/sns-desktop! You've successfully authenticated»; `git push -u origin main` → `[new branch] main -> main`; `ls-remote` confirma `refs/heads/main` em `482c352`; `push --dry-run` sem erro de permissão (a deploy key tem escrita).*
+      *Nota: o repo foi criado **privado** (a escolha inicial era público). Ver aviso no `SPEC.md` sobre o custo dos runners macOS.*
+
+## [S5] Verificação final
+- [x] S5.1 `npm run tauri:info` — confirma CLI 2.11.4 e reporta `rustc`/`cargo`/`webkit2gtk-4.1`/`rsvg2` ausentes (limitação documentada deste servidor)
+- [x] S5.2 `SPEC.md`/`TASKS.md` actualizados com o que foi verificado e o que não foi
+
+**Resultado**: código e configuração completos e comitados (`482c352`, push feito). **Nada foi compilado nem executado** — a validação de compilação e de comportamento é o CI (ainda não corrido). Falta decidir a visibilidade do repo antes de criar a tag `v*`.

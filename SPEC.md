@@ -1,7 +1,7 @@
 # SPEC — Aplicação Desktop SNS (casca Tauri v2)
 
 Data: 2026-09-14
-Estado: EM CURSO
+Estado: CONCLUÍDO no que respeita a código e configuração — **compilação e comportamento por verificar** (dependem do CI)
 
 ## 1. Escopo fechado
 
@@ -64,19 +64,19 @@ Aplicação desktop leve que envolve a aplicação web do SNS numa janela nativa
 
 ## 4. Critérios de aceitação (Definition of Done)
 
-- [ ] Projecto em `/opt/GAPH/sns-desktop` com repo git próprio e `node_modules` ignorado.
-- [ ] `npm install` completa e `npx tauri info` reconhece o CLI v2 (reportando Rust/webkit como ausentes **neste** servidor, o que é esperado).
-- [ ] `tauri.conf.json` válido contra o schema `https://schema.tauri.app/config/2`, com `productName: SNS` e sem `app.windows`.
-- [ ] `package.json` expõe `npm run tauri:dev` e `npm run tauri:build`, ambos a gerar `src/config.js` antes.
-- [ ] `src/config.js` gerado com `SNS_APP_URL` quando a variável existe, e com o valor por omissão quando não existe.
-- [ ] `src-tauri/src/lib.rs` cria a janela com título, 1280x800, redimensionável, centrada, `on_navigation` e `initialization_script`.
-- [ ] Página local: mostra o ecrã de fallback com a mensagem pedida e o botão **Tentar Reconectar** quando `/up` falha; redirecciona quando responde.
-- [ ] Workflow `.github/workflows/desktop-release.yml` com matrix macOS (2 alvos), Ubuntu e Windows.
-- [ ] `git init` + commit inicial + deploy key dedicada (`~/.ssh/deploy_sns_desktop`) com alias `github-sns-desktop`.
-- [ ] **Verificação honesta**: nada disto é compilado neste servidor. A validação local é estrutural (JSON, npm, scripts Node); a validação de compilação e de comportamento é o CI, depois do Fábio criar o repo e adicionar a deploy key.
+- [x] Projecto em `/opt/GAPH/sns-desktop` com repo git próprio e `node_modules` ignorado.
+- [x] `npm install` completa e `npx tauri info` reconhece o CLI v2 (reportando Rust/webkit como ausentes **neste** servidor, o que é esperado).
+- [x] `tauri.conf.json` válido contra o schema `https://schema.tauri.app/config/2`, com `productName: SNS` e sem `app.windows`.
+- [x] `package.json` expõe `npm run tauri:dev` e `npm run tauri:build`, ambos a gerar `src/config.js` antes.
+- [x] `src/config.js` gerado com `SNS_APP_URL` quando a variável existe, e com o valor por omissão quando não existe.
+- [x] `src-tauri/src/lib.rs` cria a janela com título, 1280x800, redimensionável, centrada, `on_navigation` e `initialization_script`.
+- [x] Página local: mostra o ecrã de fallback com a mensagem pedida e o botão **Tentar Reconectar**; os selectores usados pelo JS existem todos no HTML *(presença verificada estaticamente — o comportamento de redireccionar/falhar não foi executado).*
+- [x] Workflow `.github/workflows/desktop-release.yml` com matrix macOS (2 alvos), Ubuntu e Windows.
+- [x] `git init` + commit inicial + deploy key dedicada (`~/.ssh/deploy_sns_desktop`) com alias `github-sns-desktop`.
+- [x] **Verificação honesta**: nada disto é compilado neste servidor. A validação local é estrutural (JSON, npm, scripts Node); a validação de compilação e de comportamento é o CI, depois do Fábio criar o repo e adicionar a deploy key.
 
 ## 5. O que NÃO foi verificado
 
-- Compilação do Rust (`cargo` ausente) e arranque real da aplicação (servidor headless, sem display).
+- Compilação do Rust e arranque real da aplicação. `npm run tauri:info` confirma o motivo: `rustc`, `cargo`, `webkit2gtk-4.1` e `rsvg2` **não instalados** neste servidor, que também é headless (sem display).
 - Comportamento da janela, dos links externos, dos atalhos e do fallback offline em execução — só no CI e no PC do Fábio.
-- Geração de `.exe`/`.dmg` — depende do repo GitHub existir e das Actions correrem.
+- O workflow ainda **não correu**. O repositório foi criado como **privado** (a decisão inicial era público): em repo privado os minutos de runners macOS são pagos a 10x, pelo que o `v*` só deve ser criado depois de decidir a visibilidade ou limitar os alvos.
