@@ -110,23 +110,56 @@ jobs:
         with:
           path: artefactos
 
+      - name: Escrever as notas do release
+        run: |
+          cat > notas.md <<'NOTAS'
+          Instaladores da aplicação desktop do **SNS — Sistema Nacional de Saúde**.
+
+          A aplicação abre a plataforma web numa janela nativa, sem barra de endereço. Para entrar são precisas credenciais do SNS.
+
+          **Que ficheiro escolher:**
+
+          | Sistema | Ficheiro |
+          | --- | --- |
+          | Windows | `.exe` (NSIS) ou `.msi` |
+          | macOS com Apple Silicon (M1 ou posterior) | `.dmg` com `aarch64` no nome |
+          | macOS com Intel | `.dmg` com `x64` no nome |
+          | Linux | `.deb` (Ubuntu/Debian) ou `.AppImage` (portátil) |
+
+          **Os instaladores não estão assinados.** O Windows mostra o aviso do SmartScreen — carregar em *Mais informações* e depois em *Executar assim mesmo*. No macOS, abrir com Ctrl+clique → *Abrir*. Sem este passo o sistema recusa a execução.
+          NOTAS
+
       - name: Criar o release com os instaladores
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            --title "SNS Desktop $GITHUB_REF_NAME" \
-            --notes "Instaladores da aplicação desktop do SNS — Sistema Nacional de Saúde.
+          # O job não faz checkout, por isso o gh não consegue inferir o
+          # repositório a partir do diretório — daí o --repo explícito.
+          # As mensagens de erro vão para anotações (::error) porque os
+          # logs do Actions exigem autenticação, mas as anotações não.
+          if ! saida=$(gh release create "$GITHUB_REF_NAME" \
+              --repo "$REPO" \
+              --title "SNS Desktop $GITHUB_REF_NAME" \
+              --notes-file notas.md 2>&1); then
+            echo "::error title=Falhou o gh release create::$saida"
+            exit 1
+          fi
 
-          A aplicação abre a plataforma web numa janela nativa. Para entrar são precisas credenciais do SNS.
+          anexados=0
+          while IFS= read -r ficheiro; do
+            if ! saida=$(gh release upload "$GITHUB_REF_NAME" "$ficheiro" --repo "$REPO" --clobber 2>&1); then
+              echo "::error title=Falhou o upload de $ficheiro::$saida"
+              exit 1
+            fi
+            echo "anexado: $ficheiro"
+            anexados=$((anexados + 1))
+          done < <(find artefactos -type f \
+            \( -name '*.dmg' -o -name '*.exe' -o -name '*.msi' -o -name '*.deb' -o -name '*.AppImage' -o -name '*.rpm' \))
 
-          **Escolher o ficheiro:**
-          - Windows: \`.exe\` (NSIS) ou \`.msi\`
-          - macOS: \`.dmg\` — \`aarch64\` para Apple Silicon (M1 ou posterior), \`x64\` para Intel
-          - Linux: \`.deb\` ou \`.AppImage\`
+          if [ "$anexados" -eq 0 ]; then
+            echo "::error title=Release sem instaladores::nenhum ficheiro encontrado em artefactos/"
+            exit 1
+          fi
 
-          **Os instaladores não estão assinados.** O Windows mostra o aviso do SmartScreen (*Mais informações* → *Executar assim mesmo*) e o macOS exige Ctrl+clique → *Abrir* na primeira execução."
-
-          find artefactos -type f \
-            \( -name '*.dmg' -o -name '*.exe' -o -name '*.msi' -o -name '*.deb' -o -name '*.AppImage' -o -name '*.rpm' \) \
-            -exec gh release upload "$GITHUB_REF_NAME" {} --clobber \;
+          echo "Release $GITHUB_REF_NAME publicado com $anexados instaladores."
