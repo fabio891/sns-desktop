@@ -79,8 +79,6 @@ Aplicação desktop leve que envolve a aplicação web do SNS numa janela nativa
 
 - Compilação do Rust e arranque real da aplicação. `npm run tauri:info` confirma o motivo: `rustc`, `cargo`, `webkit2gtk-4.1` e `rsvg2` **não instalados** neste servidor, que também é headless (sem display).
 - Comportamento da janela, dos links externos, dos atalhos e do fallback offline em execução — só no CI e no PC do Fábio.
-- **O CI não consegue correr: a conta GitHub está bloqueada por um problema de facturação.** O workflow foi disparado (tag `v0.1.0`, run 34850672333) mas os 4 jobs falharam sem executar um único passo. Anotação do check-run: *"The job was not started because your account is locked due to a billing issue."* As runs anteriores em `main` (`startup_failure`, `path: BuildFailed`) tinham a mesma origem — não era a visibilidade do repositório.
+- **Comportamento em execução.** Ninguém instalou nem abriu a aplicação. A compilação passou, mas isso **não** prova que a janela abre a 1280x800, que o fallback offline aparece sem rede, que os links externos vão para o navegador do SO ou que os atalhos ficam bloqueados em release. Só se confirma instalando um artefacto.
 
-  A resolução é da conta GitHub (Settings → Billing and plans → resolver o pagamento em falta), não do código. Depois de desbloqueada, a compilação dispara-se de novo com uma tag nova (`v0.1.1`) ou com *Re-run all jobs* na interface.
-
-  **Nota**: como o bloqueio é ao nível da conta, a visibilidade do repositório (público/privado) é irrelevante para o bloqueio. Mantém-se público por ser o mais barato quando o Actions voltar: em público os runners (incluindo macOS) são gratuitos.
+  *(Histórico: a primeira tentativa, tag `v0.1.0`, falhou sem correr um único passo — a conta GitHub estava bloqueada por facturação (`The job was not started because your account is locked due to a billing issue.`). Resolvido pelo Fábio; a tag `v0.1.1` já correu normalmente. As runs em `main` com `startup_failure`/`path: BuildFailed` tinham a mesma origem — a visibilidade do repositório era irrelevante.)*

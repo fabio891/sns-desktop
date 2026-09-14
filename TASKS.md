@@ -37,11 +37,13 @@ Single Source of Truth. Cada fatia é vertical e verificada no terminal antes de
 - [x] S5.1 `npm run tauri:info` — confirma CLI 2.11.4 e reporta `rustc`/`cargo`/`webkit2gtk-4.1`/`rsvg2` ausentes (limitação documentada deste servidor)
 - [x] S5.2 `SPEC.md`/`TASKS.md` actualizados com o que foi verificado e o que não foi
 
-## [S6] Primeira compilação no CI — BLOQUEADA
-- [x] S6.1 Repositório tornado público (`curl` → 200) e tag `v0.1.0` empurrada → workflow disparado (run 34850672333)
-- [ ] S6.2 Compilação dos 4 alvos — **falhou sem correr**: `The job was not started because your account is locked due to a billing issue.`
-      *Os 4 jobs (linux, windows, macos-arm64, macos-x64) ficaram `failure` com `steps: []` e sem runner atribuído. Não é erro de código nem de configuração.*
-      *Bloqueio ao nível da **conta GitHub** — não se resolve no repositório. Desbloquear em Settings → Billing and plans, e depois voltar a disparar (`v0.1.1` ou Re-run all jobs).*
-- [ ] S6.3 Confirmar instaladores gerados (.exe/.msi, .dmg, .deb/.AppImage)
+## [S6] Compilação no CI
+- [x] S6.1 Repositório tornado público e tag `v0.1.0` empurrada → workflow disparado (run 34850672333)
+- [x] S6.2 Primeira tentativa falhou **sem correr**: `The job was not started because your account is locked due to a billing issue.` — conta GitHub bloqueada por facturação (resolvido pelo Fábio)
+- [x] S6.3 Versão alinhada em 0.1.1 (`package.json`, `tauri.conf.json`, `Cargo.toml`) + tag `v0.1.1` → **run 34851970602, os 4 alvos com sucesso**
+      *linux=success (479s) · macos-x64=success (331s) · macos-arm64=success (381s) · windows=success (468s). Os 14/14 passos correram no Linux (nos outros, o passo de `apt` é ignorado por não ser Linux).*
+- [x] S6.4 Artefactos publicados (API): `sns-desktop-windows` 3.0 MB · `sns-desktop-linux` 177.6 MB · `sns-desktop-macos-arm64` 1.8 MB · `sns-desktop-macos-x64` 2.0 MB. Expiram a 2026-12-13.
+      *O passo de upload está configurado com `if-no-files-found: error` e passou, logo há bundles em cada plataforma. Os nomes exactos dos ficheiros não foram lidos: os logs e os artefactos exigem autenticação (HTTP 403 anónimo).*
+- [ ] S6.5 Alguém instalar e abrir a aplicação para confirmar o comportamento (janela, fallback offline, links externos, atalhos)
 
-**Resultado**: código e configuração completos e comitados (`482c352`, `a58bf68`, push feito; repo público; tag `v0.1.0`). **Nada foi compilado nem executado** — o CI está bloqueado por facturação da conta GitHub. O Rust nunca foi compilado: continua sem validação de compilação.
+**Resultado**: o Rust **compila** nos 4 alvos e os instaladores são gerados. Continua por confirmar o comportamento em execução — compilar não é o mesmo que funcionar.
