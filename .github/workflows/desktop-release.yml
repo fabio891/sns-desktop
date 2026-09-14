@@ -95,3 +95,38 @@ jobs:
           name: sns-desktop-${{ matrix.slug }}
           path: src-tauri/target/**/release/bundle/**
           if-no-files-found: error
+
+  publicar:
+    name: Publicar release
+    # Só em tags — numa execução manual (workflow_dispatch) não há versão para publicar.
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: compilar
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Obter os artefactos dos 4 alvos
+        uses: actions/download-artifact@v4
+        with:
+          path: artefactos
+
+      - name: Criar o release com os instaladores
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "SNS Desktop $GITHUB_REF_NAME" \
+            --notes "Instaladores da aplicação desktop do SNS — Sistema Nacional de Saúde.
+
+          A aplicação abre a plataforma web numa janela nativa. Para entrar são precisas credenciais do SNS.
+
+          **Escolher o ficheiro:**
+          - Windows: \`.exe\` (NSIS) ou \`.msi\`
+          - macOS: \`.dmg\` — \`aarch64\` para Apple Silicon (M1 ou posterior), \`x64\` para Intel
+          - Linux: \`.deb\` ou \`.AppImage\`
+
+          **Os instaladores não estão assinados.** O Windows mostra o aviso do SmartScreen (*Mais informações* → *Executar assim mesmo*) e o macOS exige Ctrl+clique → *Abrir* na primeira execução."
+
+          find artefactos -type f \
+            \( -name '*.dmg' -o -name '*.exe' -o -name '*.msi' -o -name '*.deb' -o -name '*.AppImage' -o -name '*.rpm' \) \
+            -exec gh release upload "$GITHUB_REF_NAME" {} --clobber \;
