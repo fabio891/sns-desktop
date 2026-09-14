@@ -79,4 +79,8 @@ Aplicação desktop leve que envolve a aplicação web do SNS numa janela nativa
 
 - Compilação do Rust e arranque real da aplicação. `npm run tauri:info` confirma o motivo: `rustc`, `cargo`, `webkit2gtk-4.1` e `rsvg2` **não instalados** neste servidor, que também é headless (sem display).
 - Comportamento da janela, dos links externos, dos atalhos e do fallback offline em execução — só no CI e no PC do Fábio.
-- O workflow ainda **não correu**. O repositório foi criado como **privado** (a decisão inicial era público): em repo privado os minutos de runners macOS são pagos a 10x, pelo que o `v*` só deve ser criado depois de decidir a visibilidade ou limitar os alvos.
+- **O CI não consegue correr: a conta GitHub está bloqueada por um problema de facturação.** O workflow foi disparado (tag `v0.1.0`, run 34850672333) mas os 4 jobs falharam sem executar um único passo. Anotação do check-run: *"The job was not started because your account is locked due to a billing issue."* As runs anteriores em `main` (`startup_failure`, `path: BuildFailed`) tinham a mesma origem — não era a visibilidade do repositório.
+
+  A resolução é da conta GitHub (Settings → Billing and plans → resolver o pagamento em falta), não do código. Depois de desbloqueada, a compilação dispara-se de novo com uma tag nova (`v0.1.1`) ou com *Re-run all jobs* na interface.
+
+  **Nota**: como o bloqueio é ao nível da conta, a visibilidade do repositório (público/privado) é irrelevante para o bloqueio. Mantém-se público por ser o mais barato quando o Actions voltar: em público os runners (incluindo macOS) são gratuitos.

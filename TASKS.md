@@ -37,4 +37,11 @@ Single Source of Truth. Cada fatia é vertical e verificada no terminal antes de
 - [x] S5.1 `npm run tauri:info` — confirma CLI 2.11.4 e reporta `rustc`/`cargo`/`webkit2gtk-4.1`/`rsvg2` ausentes (limitação documentada deste servidor)
 - [x] S5.2 `SPEC.md`/`TASKS.md` actualizados com o que foi verificado e o que não foi
 
-**Resultado**: código e configuração completos e comitados (`482c352`, push feito). **Nada foi compilado nem executado** — a validação de compilação e de comportamento é o CI (ainda não corrido). Falta decidir a visibilidade do repo antes de criar a tag `v*`.
+## [S6] Primeira compilação no CI — BLOQUEADA
+- [x] S6.1 Repositório tornado público (`curl` → 200) e tag `v0.1.0` empurrada → workflow disparado (run 34850672333)
+- [ ] S6.2 Compilação dos 4 alvos — **falhou sem correr**: `The job was not started because your account is locked due to a billing issue.`
+      *Os 4 jobs (linux, windows, macos-arm64, macos-x64) ficaram `failure` com `steps: []` e sem runner atribuído. Não é erro de código nem de configuração.*
+      *Bloqueio ao nível da **conta GitHub** — não se resolve no repositório. Desbloquear em Settings → Billing and plans, e depois voltar a disparar (`v0.1.1` ou Re-run all jobs).*
+- [ ] S6.3 Confirmar instaladores gerados (.exe/.msi, .dmg, .deb/.AppImage)
+
+**Resultado**: código e configuração completos e comitados (`482c352`, `a58bf68`, push feito; repo público; tag `v0.1.0`). **Nada foi compilado nem executado** — o CI está bloqueado por facturação da conta GitHub. O Rust nunca foi compilado: continua sem validação de compilação.
