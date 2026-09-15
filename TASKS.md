@@ -77,5 +77,6 @@ Single Source of Truth. Cada fatia é vertical e verificada no terminal antes de
 - [x] S8.3 *(projecto `sns-angola`)* Marca aplicada no sistema web — favicon, ícones da PWA, login, navbar e header do portal
       *Verificado em produção: `/login` a 200 com a marca no cartão (72×72) e na navbar; `marca.png`, `favicon.png`, `icon-512.png` e `favicon.ico` a 200 com os bytes novos (7919, 1215, 14969 e 3764 — o `favicon.ico` estava vazio). Sem cache de config, aplica-se sem reiniciar o php-fpm. A conferência visual no browser fica para o Fábio.*
 - [x] S8.4 Versão 0.1.5 alinhada em `package.json`, `tauri.conf.json` e `Cargo.toml`
-- [ ] S8.5 Tag `v0.1.5` → CI compila os 4 alvos e publica o release
+- [x] S8.5 Tag `v0.1.5` → CI compila os 4 alvos e publica o release
+      *Verificado: run #6 concluído com sucesso (20:07→20:15 UTC), os 5 jobs verdes e o release v0.1.5 publicado com 6 instaladores. O ícone dentro do `.deb` publicado é byte-idêntico ao do repo — `md5 0b9bf869dec518596dcf03d6ee1d6569` no 128×128 e `6ad0d9935c5ee0feb8f5921c47b9002d` no 32×32 —, o que confirma que o CI empacotou os ícones novos e não os do template.*
 - [ ] S8.6 Fábio confirma no Windows: ícone do executável, da barra de tarefas e do menu Iniciar
