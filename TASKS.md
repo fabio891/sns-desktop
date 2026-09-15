@@ -64,4 +64,6 @@ Single Source of Truth. Cada fatia é vertical e verificada no terminal antes de
 - [ ] S7.6 Tag `v0.1.4` → CI compila os 4 alvos e publica o release
 - [ ] S7.7 Fábio instala a v0.1.4 no Windows e confirma: arranque sem link externo, chegada ao `/login`, fallback offline, links externos, atalhos
 - [ ] S7.8 Testar as exportações (PDF/CSV de relatórios, CSV de finanças, anexos de exames) e uploads conforme os critérios em `SPEC.md` §6
-- [ ] S7.9 *(projecto `sns-angola`, fora deste repo)* configurar `trustProxies` + corrigir `APP_URL` para o Laravel gerar URLs em `https://` — decisão de produção à parte
+- [x] S7.9 *(projecto `sns-angola`)* `trustProxies` com `Request::HEADER_X_FORWARDED_PROTO` em `bootstrap/app.php` — commit `0e88739`, push para `main`
+      *Verificado: `php -l` sem erros; `curl -sI https://saudenamao.ntcao.com/` → `location: https://saudenamao.ntcao.com/login` (antes `http://`) e igual em `gaph.ntcao.com`; `/login` e `/up` a 200. Sem cache de config, logo sem necessidade de reiniciar o php-fpm.*
+      *Pendente à parte: `APP_URL` continua `https://gaph.ntcao.com` (afecta links gerados em CLI) — ver `SPEC.md` §6.*

@@ -129,9 +129,21 @@ Sem isto, o WebView abria uma janela nua por cima da aplicação e o filtro de l
 
 **Correcção:** o script passa a cobrir as três vias, reencaminhando-as todas para a própria janela. A partir daí são indistinguíveis de um clique normal e quem decide é o Rust — internos ficam na app, externos vão para o navegador do sistema.
 
+### Terceira correcção — redirect do Laravel em HTTP (repo `sns-angola`)
+
+`GET https://saudenamao.ntcao.com/` devolvia `Location: http://saudenamao.ntcao.com/login`. O Laravel está atrás do Traefik e do Cloudflare (que terminam o TLS) mas não tinha `trustProxies` configurado, pelo que não via o `X-Forwarded-Proto` e assumia `http`. Além dos redirects, isto afectava os links de email e a reposição de password.
+
+**Corrigido** em `bootstrap/app.php` do `sns-angola` (commit `0e88739`, branch `main`):
+
+```php
+$middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_PROTO);
+```
+
+Confia-se **só no esquema** (`X-Forwarded-Proto`). O `X-Forwarded-For` ficou de fora de propósito: a porta 8083 escuta em `0.0.0.0`, por isso confiar no IP encaminhado tornaria o endereço do cliente falsificável em logs e rate-limiting. Verificado depois da alteração: o redirect passou a `https://` em `saudenamao.ntcao.com` e em `gaph.ntcao.com`, e `/login` e `/up` continuam a responder 200. Não há cache de config (`bootstrap/cache/config.php` não existe) e o `bootstrap/app.php` não é cacheado, pelo que a alteração aplica-se sem reiniciar o php-fpm.
+
 ### Ainda por resolver
 
-- **Redirect do Laravel em HTTP.** `GET https://saudenamao.ntcao.com/` devolve `Location: http://saudenamao.ntcao.com/login`. `APP_URL` está a `https://gaph.ntcao.com` e **não há `trustProxies` configurado** no `bootstrap/app.php`, pelo que o Laravel atrás do Traefik/Cloudflare não vê o `X-Forwarded-Proto`. Salva-se pelo HSTS, mas afecta a geração de URLs (incluindo links de email e de reposição de password). É uma alteração de **configuração de produção** no projecto `sns-angola` — fora deste repositório e a decidir à parte.
+- **`APP_URL` desalinhado.** No `sns-angola` está a `https://gaph.ntcao.com` embora o domínio de entrada seja `saudenamao.ntcao.com`. Em contexto web o Laravel usa o host do pedido e por isso não se nota; em CLI (emails em fila) gera `https://gaph.ntcao.com/...`. Funciona — esse domínio serve a mesma app — mas não é o domínio que os utilizadores esperam. Não se alterou por ser uma mudança de comportamento em produção, à parte deste trabalho.
 - **Ícones** continuam a ser os do template.
 
 ### Critérios de aceitação v0.1.4
