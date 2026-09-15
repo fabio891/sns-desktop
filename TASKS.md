@@ -61,9 +61,21 @@ Single Source of Truth. Cada fatia é vertical e verificada no terminal antes de
 - [x] S7.5 `SCRIPT_LIGACOES` passa a cobrir as três vias que pedem janela nova — `<a target="_blank">` (já existia), `<form target="_blank">` e `window.open()`
       *Verificado: os 2 scripts injectados extraídos do `lib.rs` e validados com `new vm.Script(...)` — sintaxe OK. O `submit()` do JS não volta a disparar o evento de submit, logo não há ciclo. Comportamento em execução por confirmar no Windows.*
       *Origem: `wry 0.55` liga downloads por omissão (a hipótese inicial estava errada); o problema real eram os `<form target="_blank">` dos PDFs (`relatorios/index.blade.php`) e o `window.open` do CSV (`:201`), que não passavam pelo `on_navigation`.*
-- [ ] S7.6 Tag `v0.1.4` → CI compila os 4 alvos e publica o release
+- [x] S7.6 Tag `v0.1.4` → CI compila os 4 alvos e publica o release
+      *Verificado: run #5 concluído com sucesso (19:30→19:39 UTC) e release v0.1.4 publicado com 6 instaladores — `.exe`, `.msi`, dois `.dmg`, `.deb` e `.AppImage`.*
 - [ ] S7.7 Fábio instala a v0.1.4 no Windows e confirma: arranque sem link externo, chegada ao `/login`, fallback offline, links externos, atalhos
 - [ ] S7.8 Testar as exportações (PDF/CSV de relatórios, CSV de finanças, anexos de exames) e uploads conforme os critérios em `SPEC.md` §6
 - [x] S7.9 *(projecto `sns-angola`)* `trustProxies` com `Request::HEADER_X_FORWARDED_PROTO` em `bootstrap/app.php` — commit `0e88739`, push para `main`
       *Verificado: `php -l` sem erros; `curl -sI https://saudenamao.ntcao.com/` → `location: https://saudenamao.ntcao.com/login` (antes `http://`) e igual em `gaph.ntcao.com`; `/login` e `/up` a 200. Sem cache de config, logo sem necessidade de reiniciar o php-fpm.*
-      *Pendente à parte: `APP_URL` continua `https://gaph.ntcao.com` (afecta links gerados em CLI) — ver `SPEC.md` §6.*
+      *Resolvido a 2026-09-15: `APP_URL` passou a `https://saudenamao.ntcao.com` e o fallback duplicado em `BrevoEmailService.php:25` foi removido. O `sns-angola-queue.service` foi corrigido (`Restart=always`, `User=www-data`) por estar morto desde 05/09 — ver `SPEC.md` §6.*
+
+## [S8] Identidade — marca SaúdeNamao na app e no sistema web (v0.1.5)
+- [x] S8.1 *(projecto `sns-angola`)* `gerar_logo.py` — geometria da marca extraída para `desenhar_marca()` e modos `--icone` e `--web`
+      *Verificado: logótipo dos documentos regenerado para `/tmp` com md5 igual ao publicado (`3d3b884f087b3497fa5d2589615cbb5a`) — o refactor não alterou o desenho. `--icone` → 1024×1024 RGBA; `--web` → `favicon.png` 32, `marca.png` 256, `icon-{32,64,192,512}.png` e `favicon.ico` com 16/32/48 (tamanhos confirmados relendo o ICO com PIL).*
+- [x] S8.2 Ícones do desktop regenerados com `npx tauri icon` a partir da marca
+      *Verificado: 16 ficheiros em `src-tauri/icons/` com md5 novo (o `icon.png` passou de `d07d64dd…` para `e3642540…`). As pastas `android/`, `ios/` e o `64x64.png` criados pelo CLI foram removidos — nada os referenciava e a app é só de desktop (`targets: all`).*
+- [x] S8.3 *(projecto `sns-angola`)* Marca aplicada no sistema web — favicon, ícones da PWA, login, navbar e header do portal
+      *Verificado em produção: `/login` a 200 com a marca no cartão (72×72) e na navbar; `marca.png`, `favicon.png`, `icon-512.png` e `favicon.ico` a 200 com os bytes novos (7919, 1215, 14969 e 3764 — o `favicon.ico` estava vazio). Sem cache de config, aplica-se sem reiniciar o php-fpm. A conferência visual no browser fica para o Fábio.*
+- [x] S8.4 Versão 0.1.5 alinhada em `package.json`, `tauri.conf.json` e `Cargo.toml`
+- [ ] S8.5 Tag `v0.1.5` → CI compila os 4 alvos e publica o release
+- [ ] S8.6 Fábio confirma no Windows: ícone do executável, da barra de tarefas e do menu Iniciar

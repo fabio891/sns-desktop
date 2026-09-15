@@ -141,10 +141,17 @@ $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_PROTO);
 
 Confia-se **só no esquema** (`X-Forwarded-Proto`). O `X-Forwarded-For` ficou de fora de propósito: a porta 8083 escuta em `0.0.0.0`, por isso confiar no IP encaminhado tornaria o endereço do cliente falsificável em logs e rate-limiting. Verificado depois da alteração: o redirect passou a `https://` em `saudenamao.ntcao.com` e em `gaph.ntcao.com`, e `/login` e `/up` continuam a responder 200. Não há cache de config (`bootstrap/cache/config.php` não existe) e o `bootstrap/app.php` não é cacheado, pelo que a alteração aplica-se sem reiniciar o php-fpm.
 
-### Ainda por resolver
+### `APP_URL` alinhado com o domínio de entrada
 
-- **`APP_URL` desalinhado.** No `sns-angola` está a `https://gaph.ntcao.com` embora o domínio de entrada seja `saudenamao.ntcao.com`. Em contexto web o Laravel usa o host do pedido e por isso não se nota; em CLI (emails em fila) gera `https://gaph.ntcao.com/...`. Funciona — esse domínio serve a mesma app — mas não é o domínio que os utilizadores esperam. Não se alterou por ser uma mudança de comportamento em produção, à parte deste trabalho.
-- **Ícones** continuam a ser os do template.
+Resolvido no `sns-angola` a 2026-09-15:
+
+- `.env` → `APP_URL=https://saudenamao.ntcao.com` (era `https://gaph.ntcao.com`).
+- Removido o domínio duplicado em `app/Services/BrevoEmailService.php:25`, que usava `config('app.url', 'https://gaph.ntcao.com')` como fallback — passou a ler só do `.env`.
+- `sns-angola-queue.service` corrigido: `Restart=on-failure` → `always` e `User=root` → `www-data`.
+
+Duas correcções ao diagnóstico inicial. O desalinhamento **não** se limitava ao CLI: o `BrevoEmailService` lê `config('app.url')` directamente (não `url()`/`route()`) e é chamado em contexto web pelo `PortalController`, pelo que **todos** os emails de verificação apontavam para `gaph.ntcao.com`. E os 7 *Listeners* de notificação geram `route(...)` dentro do worker de fila, onde não há host do pedido, pelo que também dependiam do `APP_URL`.
+
+O serviço do worker estava **morto desde 2026-09-05**: com `--max-time=3600` o worker sai com status 0 ao fim de uma hora, e `Restart=on-failure` não reinicia em saída limpa. Ficou igual ao `govdoc-queue.service`, que já documentava essa razão. Verificado: `active (running)`, `NRestarts=0`, fila a 0 pendentes, sem `Permission denied`, e `/up` a 200 nos dois domínios.
 
 ### Critérios de aceitação v0.1.4
 
@@ -156,3 +163,30 @@ Confia-se **só no esquema** (`X-Forwarded-Proto`). O `X-Forwarded-For` ficou de
 - [ ] `F5`/`F12`/`Ctrl+R` bloqueados; `Ctrl+P` e `Ctrl+F` a funcionar.
 - [ ] Exportações testadas: PDF de relatórios (formulário), CSV de relatórios (`window.open`), CSV de finanças e anexos de exames (download por navegação).
 - [ ] Uploads testados (anexar exame) e reportados.
+
+## 7. Identidade — marca SaúdeNamao (v0.1.5)
+
+O ícone do desktop era o do template Tauri e nunca tinha sido substituído — era o último item em "ainda por resolver". Ao investigar, apurou-se que a marca **nunca tinha sido aplicada a nada**: o sistema web não tinha uma única referência ao logótipo SaúdeNamao. Usava um ícone genérico do Bootstrap na navbar e no login, um favicon azul com um coração vermelho, ícones de PWA com esse mesmo favicon (338 bytes, iguais) e um `public/favicon.ico` **vazio, com 0 bytes**.
+
+### O que mudou
+
+| Onde | Antes | Agora |
+|---|---|---|
+| Ícone do desktop | Template Tauri (o "T" amarelo/ciano) | Marca SaúdeNamao, 16 ficheiros regenerados |
+| Favicon | Genérico azul com coração, 32×32 | Marca, `favicon.png` 32×32 e `favicon.ico` 16/32/48 |
+| Ícones da PWA | O mesmo genérico | Marca em 32, 64, 192 e 512 |
+| Ecrã de login | `<i class="bi bi-heart-pulse-fill">` | Marca, 72×72 |
+| Navbar e header do portal | Ícone Bootstrap | Marca sobre um chip branco arredondado |
+
+A marca é gerada por `sns-angola/docs/projeto/gerar_logo.py`, que passou a ter três modos: o logótipo completo (por omissão), `--icone` (marca quadrada para a app) e `--web` (todos os assets do sistema). A geometria do azulejo e da cruz foi extraída para `desenhar_marca()`, alimentada por um único valor de lado, e o modo `--web` reduz de 1024px com LANCZOS porque o `ImageDraw` não faz antialiasing. Verificado: o logótipo dos documentos continua **byte-idêntico** depois do refactor (mesmo md5, `3d3b884f…`).
+
+### Decisão de cor
+
+A aplicação usa o azul padrão do Bootstrap (`#0d6efd`) e um gradiente azul→roxo no Portal do Paciente — não a paleta teal da marca. Optou-se por **não** trocar o tema: a marca aparece sobre um chip branco onde o fundo é azul, e o resto do sistema mantém-se. A identidade visual do produto continua, por isso, a não ser a da marca; é uma decisão consciente, não um esquecimento.
+
+### Critérios de aceitação v0.1.5
+
+- [ ] CI compila os 4 alvos com a tag `v0.1.5` e publica o release.
+- [ ] No Windows, o ícone do executável, da barra de tarefas e do menu Iniciar é a marca SaúdeNamao.
+- [ ] O favicon do browser e o ícone do ecrã inicial (Portal do Paciente instalado como PWA) são a marca.
+- [ ] Login, navbar e header do portal mostram a marca com contraste legível.
