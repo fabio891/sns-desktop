@@ -19,17 +19,42 @@ const ORIGENS_DA_CASCA: &[(&str, &str)] = &[
     ("http", "tauri.localhost"),
 ];
 
-/// Links com `target="_blank"` não passam pelo `on_navigation`, por isso o
-/// clique é reencaminhado para a própria janela. Assim a decisão de abrir
-/// dentro ou fora fica num único sítio (o Rust).
+/// Tudo o que peça uma janela nova é reencaminhado para a própria janela, para
+/// que o `on_navigation` (Rust) decida num único sítio quem fica dentro e quem
+/// vai para o navegador do sistema.
+///
+/// São precisos os três casos porque uma janela nova **não** passa pelo
+/// `on_navigation`: sem isto o WebView abria uma janela nua por cima da app e
+/// o pedido não chegava a ser classificado. Os relatórios usam
+/// `<form target="_blank">` e o export CSV usa `window.open`.
 const SCRIPT_LIGACOES: &str = r#"
-document.addEventListener('click', function (evento) {
-  var alvo = evento.target;
-  var ligacao = alvo && alvo.closest ? alvo.closest('a[target="_blank"]') : null;
-  if (!ligacao || !ligacao.href) return;
-  evento.preventDefault();
-  window.location.href = ligacao.href;
-}, true);
+(function () {
+  function encaminhar(url) {
+    if (url) window.location.href = String(url);
+  }
+
+  document.addEventListener('click', function (evento) {
+    var alvo = evento.target;
+    var ligacao = alvo && alvo.closest ? alvo.closest('a[target="_blank"]') : null;
+    if (!ligacao || !ligacao.href) return;
+    evento.preventDefault();
+    encaminhar(ligacao.href);
+  }, true);
+
+  document.addEventListener('submit', function (evento) {
+    var formulario = evento.target;
+    if (!formulario || formulario.target !== '_blank') return;
+    evento.preventDefault();
+    // submit() não volta a disparar o evento, por isso não há ciclo.
+    formulario.target = '_self';
+    formulario.submit();
+  }, true);
+
+  window.open = function (url) {
+    encaminhar(url);
+    return null;
+  };
+})();
 "#;
 
 /// Bloqueia atalhos de navegador nos builds de produção. Em desenvolvimento

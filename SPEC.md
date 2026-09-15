@@ -113,10 +113,25 @@ Ou seja: o erro não estava nos pedidos ao servidor (que nunca aconteceram) mas 
 1. **Deteção de origem por pares `(esquema, host)` exactos.** `ORIGENS_DA_CASCA` lista `("tauri", "localhost")` e `("http", "tauri.localhost")`. A comparação é exacta de propósito: aceitar qualquer host terminado em `.localhost` reabriria a falha que a Tauri corrigiu no `is_local_url` (aviso de segurança em que URLs remotas passavam por locais no Windows/Android).
 2. **Fim da duplicação da lista de hosts.** `HOSTS_INTERNOS` deixou de estar escrita à mão no Rust e passou a ser **gerada**: `scripts/config.mjs` escreve `src/config.js` *e* `src-tauri/src/hosts_gerados.rs` a partir do mesmo valor, com `SNS_APP_URL` (o host do servidor entra sempre) e `SNS_APP_HOSTS` (aliases). Antes, apontar a app a um domínio novo fazia com que o **próprio servidor** fosse tratado como externo — bomba-relógio documentada no README que agora desaparece.
 
-### Riscos identificados mas NÃO corrigidos (precisam de teste)
+### Segunda correcção (mesma sessão) — janelas novas e exportações
 
-- **Downloads.** A app faz downloads reais: `FileDownloadController::download` → `Storage::download()` (`routes/web.php:152`), relatórios PDF (`routes/web.php:247`) e exportação de dados do portal (`routes/web.php:354`). O `wry` não liga o handler de download por omissão; é frequente o clique não fazer nada. **Por testar** — não se alterou código sem primeiro confirmar o comportamento.
-- **Redirect do Laravel em HTTP.** `GET https://saudenamao.ntcao.com/` devolve `Location: http://saudenamao.ntcao.com/login` (o Laravel está atrás do Cloudflare e não reconhece o `X-Forwarded-Proto`). Salva-se pelo HSTS, mas deve ser corrigido no `APP_URL`/TrustProxies **do projecto `sns-angola`**, fora deste repositório.
+O `wry 0.55` (o que o `tauri 2.11.5` usa) **liga os downloads por omissão em todas as plataformas** — a preocupação inicial com o handler de download não se confirmou, e não se escreveu código para ela. O problema estava noutro sítio, e é concreto.
+
+**A lacuna:** o `SCRIPT_LIGACOES` só interceptava cliques em `<a target="_blank">`. As exportações do SNS usam outras duas vias que **não** passam pelo `on_navigation`, porque pedem uma janela nova em vez de navegar:
+
+| Via | Onde | Comportamento sem o script |
+|---|---|---|
+| `<form target="_blank">` | `relatorios/index.blade.php` (4 formulários PDF) | janela nova, pedido não classificado |
+| `window.open(url, '_blank')` | `relatorios/index.blade.php:201` (`gerarCsv`) | idem |
+| `<a target="_blank">` | `portal/telemedicina/show.blade.php:48` (Jitsi) | já coberto |
+
+Sem isto, o WebView abria uma janela nua por cima da aplicação e o filtro de links do Rust nunca via o pedido — o que contrariava o desenho declarado («um único ponto de decisão»). Os downloads por navegação normal (`<a href>` sem `target`, como os anexos de exames e os CSV de finanças) sempre estiveram cobertos, porque esses passam pelo `on_navigation`.
+
+**Correcção:** o script passa a cobrir as três vias, reencaminhando-as todas para a própria janela. A partir daí são indistinguíveis de um clique normal e quem decide é o Rust — internos ficam na app, externos vão para o navegador do sistema.
+
+### Ainda por resolver
+
+- **Redirect do Laravel em HTTP.** `GET https://saudenamao.ntcao.com/` devolve `Location: http://saudenamao.ntcao.com/login`. `APP_URL` está a `https://gaph.ntcao.com` e **não há `trustProxies` configurado** no `bootstrap/app.php`, pelo que o Laravel atrás do Traefik/Cloudflare não vê o `X-Forwarded-Proto`. Salva-se pelo HSTS, mas afecta a geração de URLs (incluindo links de email e de reposição de password). É uma alteração de **configuração de produção** no projecto `sns-angola` — fora deste repositório e a decidir à parte.
 - **Ícones** continuam a ser os do template.
 
 ### Critérios de aceitação v0.1.4
@@ -127,4 +142,5 @@ Ou seja: o erro não estava nos pedidos ao servidor (que nunca aconteceram) mas 
 - [ ] Sem rede: aparece o ecrã "Sem conexão com a internet" e o botão **Tentar Reconectar** volta a ligar quando a rede regressa.
 - [ ] Um link externo abre no navegador predefinido; os internos ficam na janela.
 - [ ] `F5`/`F12`/`Ctrl+R` bloqueados; `Ctrl+P` e `Ctrl+F` a funcionar.
-- [ ] Downloads e uploads testados e reportados (funcionam ou viram fatia própria).
+- [ ] Exportações testadas: PDF de relatórios (formulário), CSV de relatórios (`window.open`), CSV de finanças e anexos de exames (download por navegação).
+- [ ] Uploads testados (anexar exame) e reportados.

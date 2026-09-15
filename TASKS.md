@@ -58,6 +58,10 @@ Single Source of Truth. Cada fatia é vertical e verificada no terminal antes de
       *Verificado: (A) omissão → `saudenamao.ntcao.com, gaph.ntcao.com, sns-angola.ntcao.com`; (B) `SNS_APP_URL=https://novo.exemplo.ao/` → host novo entra, barra final normalizada; (C) `SNS_APP_HOSTS="a.exemplo.ao, b.exemplo.ao"` → substitui os extras e o host do servidor mantém-se; (D) `SNS_APP_HOSTS='nao valido!'` → exit 1 com mensagem; (E) `SNS_APP_URL=exemplo.ao` → exit 1. Valor por omissão reposto no fim.*
 - [x] S7.3 `README.md` — secção do endereço reescrita (documenta `SNS_APP_HOSTS` e o ficheiro gerado); aviso do `HOSTS_INTERNOS` à mão removido
 - [x] S7.4 Versão 0.1.4 alinhada em `package.json`, `tauri.conf.json` e `Cargo.toml`
-- [ ] S7.5 Tag `v0.1.4` → CI compila os 4 alvos e publica o release
-- [ ] S7.6 Fábio instala a v0.1.4 no Windows e confirma: arranque sem link externo, chegada ao `/login`, fallback offline, links externos, atalhos
-- [ ] S7.7 Testar downloads e uploads (risco identificado em `SPEC.md` §6; se estiverem mortos, abre fatia própria)
+- [x] S7.5 `SCRIPT_LIGACOES` passa a cobrir as três vias que pedem janela nova — `<a target="_blank">` (já existia), `<form target="_blank">` e `window.open()`
+      *Verificado: os 2 scripts injectados extraídos do `lib.rs` e validados com `new vm.Script(...)` — sintaxe OK. O `submit()` do JS não volta a disparar o evento de submit, logo não há ciclo. Comportamento em execução por confirmar no Windows.*
+      *Origem: `wry 0.55` liga downloads por omissão (a hipótese inicial estava errada); o problema real eram os `<form target="_blank">` dos PDFs (`relatorios/index.blade.php`) e o `window.open` do CSV (`:201`), que não passavam pelo `on_navigation`.*
+- [ ] S7.6 Tag `v0.1.4` → CI compila os 4 alvos e publica o release
+- [ ] S7.7 Fábio instala a v0.1.4 no Windows e confirma: arranque sem link externo, chegada ao `/login`, fallback offline, links externos, atalhos
+- [ ] S7.8 Testar as exportações (PDF/CSV de relatórios, CSV de finanças, anexos de exames) e uploads conforme os critérios em `SPEC.md` §6
+- [ ] S7.9 *(projecto `sns-angola`, fora deste repo)* configurar `trustProxies` + corrigir `APP_URL` para o Laravel gerar URLs em `https://` — decisão de produção à parte
