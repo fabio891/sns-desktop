@@ -1,15 +1,22 @@
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_opener::open_url;
 
+mod hosts_gerados;
+use hosts_gerados::HOSTS_INTERNOS;
+
 const TITULO: &str = "SNS — Sistema Nacional de Saúde";
 
-/// Hosts servidos pela aplicação. Tudo o que não esteja aqui (nem seja a
-/// própria casca local) é link externo e abre no navegador do sistema.
-/// Ao apontar a app a um domínio novo, acrescentar aqui — ver README.
-const HOSTS_INTERNOS: &[&str] = &[
-    "saudenamao.ntcao.com",
-    "gaph.ntcao.com",
-    "sns-angola.ntcao.com",
+/// Origens que a própria casca serve, por plataforma. O Tauri usa
+/// `tauri://localhost` no macOS/Linux/iOS e `http://tauri.localhost` no
+/// Windows/Android — se só se reconhecer a primeira, no Windows a página
+/// local da casca é classificada como link externo e vai parar ao navegador.
+///
+/// A comparação é exacta, aos pares: aceitar qualquer host terminado em
+/// `.localhost` deixaria passar por local um domínio remoto com esse sufixo
+/// (é a falha que o `is_local_url` do Tauri corrigiu no aviso de segurança).
+const ORIGENS_DA_CASCA: &[(&str, &str)] = &[
+    ("tauri", "localhost"),
+    ("http", "tauri.localhost"),
 ];
 
 /// Links com `target="_blank"` não passam pelo `on_navigation`, por isso o
@@ -44,16 +51,19 @@ document.addEventListener('keydown', function (evento) {
 }, true);
 "#;
 
-/// Navegação dentro da aplicação: a casca local (`tauri://`) e o servidor.
+/// Navegação dentro da aplicação: a casca local, o servidor do SNS e o
+/// servidor de desenvolvimento (`localhost`).
 fn navegacao_interna(url: &tauri::Url) -> bool {
-    if url.scheme() == "tauri" {
-        return true;
-    }
+    let host = match url.host_str() {
+        Some(host) => host,
+        None => return false,
+    };
 
-    match url.host_str() {
-        Some(host) => host == "localhost" || HOSTS_INTERNOS.contains(&host),
-        None => false,
-    }
+    ORIGENS_DA_CASCA
+        .iter()
+        .any(|&(esquema, origem)| url.scheme() == esquema && host == origem)
+        || host == "localhost"
+        || HOSTS_INTERNOS.contains(&host)
 }
 
 fn abrir_no_navegador(url: &tauri::Url) {

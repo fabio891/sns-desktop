@@ -46,6 +46,18 @@ Single Source of Truth. Cada fatia é vertical e verificada no terminal antes de
 - [x] S6.5 Release automático — primeiro job `publicar` falhou (*não fazia checkout, logo o `gh` não inferia o repositório*); corrigido com `--repo` explícito + erros emitidos como anotações
       *Tag `v0.1.3`, run 34854848177: os 5 jobs com sucesso. Release **publicado** com 6 instaladores: `SNS_0.1.3_x64-setup.exe` (1.3 MB) · `SNS_0.1.3_x64_en-US.msi` (1.9 MB) · `SNS_0.1.3_aarch64.dmg` (1.8 MB) · `SNS_0.1.3_x64.dmg` (1.9 MB) · `SNS_0.1.3_amd64.deb` (2.2 MB) · `SNS_0.1.3_amd64.AppImage` (76.3 MB)*
       *Download **anónimo** confirmado: página do release HTTP 200 e os ficheiros HTTP 200 `application/octet-stream`, sem sessão GitHub — que era o requisito para partilhar com terceiros.*
-- [ ] S6.6 Alguém instalar e abrir a aplicação para confirmar o comportamento (janela, fallback offline, links externos, atalhos)
+- [x] S6.6 Fábio instalou a v0.1.3 no **Windows** e abriu-a
+      *Resultado: **falhou**. Janela preta/vazia, um navegador do sistema abriu um link externo `tauri localhost`, e a app nunca chegou ao `/login`. Diagnóstico completo em `SPEC.md` §6. É a primeira verificação em execução do projecto — e confirma exactamente porque é que ela era necessária.*
 
-**Resultado**: o Rust **compila** nos 4 alvos, os instaladores são gerados e estão publicados em <https://github.com/fabio891/sns-desktop/releases/tag/v0.1.3>. Continua por confirmar o comportamento em execução — **compilar não é o mesmo que funcionar**.
+**Resultado (v0.1.3)**: o Rust **compila** nos 4 alvos, os instaladores são gerados e estão publicados em <https://github.com/fabio891/sns-desktop/releases/tag/v0.1.3>. Em execução **não funcionava no Windows** — **compilar não é o mesmo que funcionar**.
+
+## [S7] Correcção v0.1.4 — arranque no Windows
+- [x] S7.1 `navegacao_interna` passa a reconhecer origens por pares `(esquema, host)` exactos — `("tauri","localhost")` e `("http","tauri.localhost")`
+      *Verificado (estrutural): revisão do `lib.rs`; a comparação é exacta, sem sufixos `.localhost` (evita reabrir a falha do `is_local_url` do Tauri). Compilação por confirmar no CI.*
+- [x] S7.2 Fim da lista de hosts duplicada: `scripts/config.mjs` gera `src-tauri/src/hosts_gerados.rs` além de `src/config.js`
+      *Verificado: (A) omissão → `saudenamao.ntcao.com, gaph.ntcao.com, sns-angola.ntcao.com`; (B) `SNS_APP_URL=https://novo.exemplo.ao/` → host novo entra, barra final normalizada; (C) `SNS_APP_HOSTS="a.exemplo.ao, b.exemplo.ao"` → substitui os extras e o host do servidor mantém-se; (D) `SNS_APP_HOSTS='nao valido!'` → exit 1 com mensagem; (E) `SNS_APP_URL=exemplo.ao` → exit 1. Valor por omissão reposto no fim.*
+- [x] S7.3 `README.md` — secção do endereço reescrita (documenta `SNS_APP_HOSTS` e o ficheiro gerado); aviso do `HOSTS_INTERNOS` à mão removido
+- [x] S7.4 Versão 0.1.4 alinhada em `package.json`, `tauri.conf.json` e `Cargo.toml`
+- [ ] S7.5 Tag `v0.1.4` → CI compila os 4 alvos e publica o release
+- [ ] S7.6 Fábio instala a v0.1.4 no Windows e confirma: arranque sem link externo, chegada ao `/login`, fallback offline, links externos, atalhos
+- [ ] S7.7 Testar downloads e uploads (risco identificado em `SPEC.md` §6; se estiverem mortos, abre fatia própria)

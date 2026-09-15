@@ -1,6 +1,6 @@
 [package]
 name = "sns-desktop"
-version = "0.1.3"
+version = "0.1.4"
 description = "Casca desktop do SNS — Sistema Nacional de Saúde"
 authors = ["NTC Angola"]
 edition = "2021"

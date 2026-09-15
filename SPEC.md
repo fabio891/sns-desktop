@@ -1,7 +1,7 @@
 # SPEC — Aplicação Desktop SNS (casca Tauri v2)
 
-Data: 2026-09-14
-Estado: CONCLUÍDO no que respeita a código e configuração — **compilação e comportamento por verificar** (dependem do CI)
+Data: 2026-09-14 — actualizado a 2026-09-15 com a correcção v0.1.4 (ver §6)
+Estado: a v0.1.3 **não arrancava no Windows** (janela preta, sem chegar ao servidor). Correcção escrita na v0.1.4; **compilação e comportamento por verificar** (dependem do CI e de uma instalação real)
 
 ## 1. Escopo fechado
 
@@ -83,3 +83,48 @@ Aplicação desktop leve que envolve a aplicação web do SNS numa janela nativa
 - **Comportamento em execução.** Ninguém instalou nem abriu a aplicação. A compilação passou, mas isso **não** prova que a janela abre a 1280x800, que o fallback offline aparece sem rede, que os links externos vão para o navegador do SO ou que os atalhos ficam bloqueados em release. Só se confirma instalando um artefacto.
 
   *(Histórico: a primeira tentativa, tag `v0.1.0`, falhou sem correr um único passo — a conta GitHub estava bloqueada por facturação (`The job was not started because your account is locked due to a billing issue.`). Resolvido pelo Fábio; a tag `v0.1.1` já correu normalmente. As runs em `main` com `startup_failure`/`path: BuildFailed` tinham a mesma origem — a visibilidade do repositório era irrelevante.)*
+
+## 6. Correcção v0.1.4 — a app não arrancava no Windows
+
+### Sintoma relatado (instalação real, 2026-09-15)
+
+Fábio instalou o `.exe`/`.msi` no **Windows**. Ao abrir: a janela ficou **preta/vazia** e um **navegador do sistema abriu um link externo** apontado a `tauri localhost`. A app nunca chegou ao `/login` do SNS. Este é o primeiro teste em execução de sempre — e o veredicto é que a v0.1.3 **não funcionava**.
+
+### Causa raiz
+
+`navegacao_interna()` (em `lib.rs`) só reconhecia duas coisas: o esquema `tauri` e o host `localhost`. Mas o Tauri v2 serve as páginas locais em origens **diferentes por plataforma**:
+
+| Plataforma | Origem da casca local |
+|---|---|
+| macOS · Linux · iOS | `tauri://localhost` |
+| **Windows · Android** | **`http://tauri.localhost`** |
+
+No Windows, a página local chega com esquema `http` e host `tauri.localhost` — não bate certo com nenhuma das duas condições. Consequência em cadeia:
+
+1. `on_navigation` é chamado logo para a **primeira** navegação, a da própria `index.html`.
+2. Como `navegacao_interna` devolve `false`, a casca classifica a sua própria página como link externo e chama `open_url()`.
+3. O navegador do sistema abre `http://tauri.localhost/index.html`, que fora da app não existe (nada escuta nesse host).
+4. A navegação é cancelada dentro da janela → **janela preta**. Como a `index.html` nunca corre, o `main.js` nunca faz o health-check a `/up` nem o `location.replace` → **nunca chega ao servidor**.
+
+Ou seja: o erro não estava nos pedidos ao servidor (que nunca aconteceram) mas no filtro que decide o que é interno. Passou despercebido porque no macOS/Linux o esquema `tauri://` faz o código entrar pelo caminho certo.
+
+### O que foi corrigido
+
+1. **Deteção de origem por pares `(esquema, host)` exactos.** `ORIGENS_DA_CASCA` lista `("tauri", "localhost")` e `("http", "tauri.localhost")`. A comparação é exacta de propósito: aceitar qualquer host terminado em `.localhost` reabriria a falha que a Tauri corrigiu no `is_local_url` (aviso de segurança em que URLs remotas passavam por locais no Windows/Android).
+2. **Fim da duplicação da lista de hosts.** `HOSTS_INTERNOS` deixou de estar escrita à mão no Rust e passou a ser **gerada**: `scripts/config.mjs` escreve `src/config.js` *e* `src-tauri/src/hosts_gerados.rs` a partir do mesmo valor, com `SNS_APP_URL` (o host do servidor entra sempre) e `SNS_APP_HOSTS` (aliases). Antes, apontar a app a um domínio novo fazia com que o **próprio servidor** fosse tratado como externo — bomba-relógio documentada no README que agora desaparece.
+
+### Riscos identificados mas NÃO corrigidos (precisam de teste)
+
+- **Downloads.** A app faz downloads reais: `FileDownloadController::download` → `Storage::download()` (`routes/web.php:152`), relatórios PDF (`routes/web.php:247`) e exportação de dados do portal (`routes/web.php:354`). O `wry` não liga o handler de download por omissão; é frequente o clique não fazer nada. **Por testar** — não se alterou código sem primeiro confirmar o comportamento.
+- **Redirect do Laravel em HTTP.** `GET https://saudenamao.ntcao.com/` devolve `Location: http://saudenamao.ntcao.com/login` (o Laravel está atrás do Cloudflare e não reconhece o `X-Forwarded-Proto`). Salva-se pelo HSTS, mas deve ser corrigido no `APP_URL`/TrustProxies **do projecto `sns-angola`**, fora deste repositório.
+- **Ícones** continuam a ser os do template.
+
+### Critérios de aceitação v0.1.4
+
+- [ ] CI compila os 4 alvos com a tag `v0.1.4`.
+- [ ] No Windows, a janela abre **sem** abrir nada no navegador do sistema.
+- [ ] A casca mostra "A ligar ao servidor…" e chega ao `/login` do SNS dentro da janela.
+- [ ] Sem rede: aparece o ecrã "Sem conexão com a internet" e o botão **Tentar Reconectar** volta a ligar quando a rede regressa.
+- [ ] Um link externo abre no navegador predefinido; os internos ficam na janela.
+- [ ] `F5`/`F12`/`Ctrl+R` bloqueados; `Ctrl+P` e `Ctrl+F` a funcionar.
+- [ ] Downloads e uploads testados e reportados (funcionam ou viram fatia própria).

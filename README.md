@@ -34,7 +34,13 @@ O valor por omissão está em `scripts/config.mjs` e é escrito em `src/config.j
 SNS_APP_URL=https://outro.dominio.ao npm run tauri:build
 ```
 
-> **Atenção:** a lista de hosts internos está também em `src-tauri/src/lib.rs` (`HOSTS_INTERNOS`). Um domínio novo tem de ser acrescentado lá, senão os links para esse domínio são tratados como externos e abrem no navegador do sistema.
+O host de `SNS_APP_URL` entra automaticamente na lista de hosts internos. Domínios servidos pelo mesmo servidor mas com outro nome (aliases) vão em `SNS_APP_HOSTS`, separados por vírgulas — esta variável **substitui** a lista por omissão:
+
+```bash
+SNS_APP_URL=https://novo.dominio.ao SNS_APP_HOSTS=novo.dominio.ao,alias.dominio.ao npm run tauri:build
+```
+
+`scripts/config.mjs` escreve as duas fontes a partir do mesmo valor (`src/config.js` para o health-check e `src-tauri/src/hosts_gerados.rs` para o filtro de navegação). Não há lista de hosts escrita à mão no Rust — um domínio novo não precisa de ser acrescentado a lado nenhum.
 
 No CI, define a variável `SNS_APP_URL` nas *Settings → Variables* do repositório (não é segredo).
 
@@ -60,8 +66,9 @@ src/                      casca local (HTML/CSS/JS) — só o ecrã de ligação
 src-tauri/
   tauri.conf.json         metadados do bundle (nome, ícones); a janela é criada em Rust
   src/lib.rs              janela, links externos, bloqueio de atalhos
+  src/hosts_gerados.rs    gerado por scripts/config.mjs (hosts internos)
   capabilities/           permissões (mínimas: só core)
-scripts/config.mjs        gera src/config.js a partir de SNS_APP_URL
+scripts/config.mjs        gera src/config.js e src-tauri/src/hosts_gerados.rs
 ```
 
 Os ícones em `src-tauri/icons/` são ainda os do template do Tauri — a substituir pelos oficiais do SNS (`npm run tauri icon caminho/para/logo.png`).
